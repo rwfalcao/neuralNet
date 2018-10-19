@@ -3,30 +3,24 @@ from keras.utils import to_categorical
 from keras import models
 from keras import layers
 from keras.datasets import imdb
+import pandas as pd
 
-(training_data, training_targets), (testing_data, testing_targets) = imdb.load_data(num_words=10000)
+#dados de treinamento
+trainDf = pd.read_csv("data/dota2Train.csv", ",")
+trainWinners = trainDf.winnerTeam
+trainHeroPicks = np.array(trainDf.values)
+trainHeroPicks = trainHeroPicks[:,4:]
 
-data = np.concatenate((training_data, testing_data), axis=0)
+#dados de teste
+testDf = pd.read_csv("data/dota2Test.csv", ",")
+testWinners = testDf.winnerTeam
+testHeroPicks = np.array(testDf.values)
+testHeroPicks = testHeroPicks[:,4:]
 
-targets = np.concatenate((training_targets, testing_targets), axis=0)
-
-def vectorize(sequences, dimension = 10000):
- results = np.zeros((len(sequences), dimension))
- for i, sequence in enumerate(sequences):
-  results[i, sequence] = 1
- return results
  
-data = vectorize(data)
-targets = np.array(targets).astype("float32")
-
-test_x = data[:10000]
-test_y = targets[:10000]
-train_x = data[10000:]
-train_y = targets[10000:]
-
 model = models.Sequential()
 # Input - Layer
-model.add(layers.Dense(50, activation = "relu", input_shape=(10000, )))
+model.add(layers.Dense(50, activation = "relu", input_shape=(113, )))
 # Hidden - Layers
 model.add(layers.Dropout(0.3, noise_shape=None, seed=None))
 model.add(layers.Dense(50, activation = "relu"))
@@ -43,10 +37,8 @@ model.compile(
  loss = "binary_crossentropy",
  metrics = ["accuracy"]
 )
-results = model.fit(
- train_x, train_y,
- epochs= 2,
- batch_size = 500,
- validation_data = (test_x, test_y)
-)
-print("Test-Accuracy:", np.mean(results.history["val_acc"]))
+
+fitResult = model.fit(trainHeroPicks, trainWinners, epochs=10, batch_size=32, verbose=1)
+
+predicted = model.predict(testHeroPicks)
+print(predicted)
